@@ -92,6 +92,7 @@ const loginUser = async (req, res) => {
       username: UserMatchingToPassedData.username,
 
     }, secretKey, options);
+    //these {userId,role,username} are the payload that we're going to store in the token.when you decode it in auth-middleware.js,you will get these values.
 
     if (accesToken) {
       res.status(200).json({
@@ -117,7 +118,83 @@ const loginUser = async (req, res) => {
 } //This controller will handle the login of a user. It will receive the user's email and password in the request body, validate the data, compare the password with the hashed password in the database, and generate a token if the password is correct. If the password is incorrect, the controller will return an error message.
 
 
-module.exports = { registerUser, loginUser }; //The controllers are exported so that they can be imported into the routes file and used to handle the incoming requests.
+
+const changePassword = async (req, res) => {
+  try {
+    //first get the currentUserId from the decoded token in auth-middleware.js after the authentication was complete for that user.
+    const currentUserId = req.user.userId;
+    //extract the old and new password from the request body because you entered your old pass and new pass values on frontend and you're sending those values within the req.body
+    const { oldPassword, newPassword } = req.body;
+
+    //now get the current user document(object) based on the currentUserId you got above(it was decoded from the token in auth-middleware).Because we need to know which user is trying to change the password.
+    const currentUser = await User.findById(currentUserId);
+    if (!currentUser) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found." });
+    }
+
+    //check if the old password you got from client(which is the old password user enters when attemptin to change the password) matches the password in the database(which is the hashed password in the database)
+    const isOldPasswordEnteredTrue = await bcrypt.compare(
+      oldPassword,
+      currentUser.password
+    );
+    if (!isOldPasswordEnteredTrue) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid old password.Please enter your current password.",
+      });
+    }
+
+    //now hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+    //update the user's password in the database with the new hashed password
+    const updatedUser = await User.findByIdAndUpdate(
+      currentUserId,
+      { password: hashedNewPassword },
+      { new: true }
+    );
+    //{ new: true } is an options object. The new: true option ensures that the method returns the updated document rather than the original document.
+    //The specified document in the User collection is updated with the new hashed password. The old document is replaced with the updated document in the database.
+    //The method returns the updated document if the new: true option is specified. If new: true is not specified, it returns the original document before the update.
+    if (updatedUser) {
+      res.status(200).json({
+        success: true,
+        message: "Password updated successfully.",
+        data: updatedUser,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Password update failed, please try again."
+      });
+    }
+
+
+    /*
+      you could also do
+      currentUser.password = hashedNewPassword;
+      await currentUser.save();
+      and move on with the response as
+      res.status(200).json({
+        success: true,
+        message: "Password updated successfully.",
+        data: currentUser,
+      });
+    */
+
+  }catch(error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Something went wrong,please try again." });  
+  }
+}
+
+
+
+
+
+module.exports = { registerUser, loginUser,changePassword }; //The controllers are exported so that they can be imported into the routes file and used to handle the incoming requests.
 
 
 

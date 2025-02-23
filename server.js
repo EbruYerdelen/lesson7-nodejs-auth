@@ -5,7 +5,7 @@ const connectDB = require("./database/db");
 const AuthRoutes = require("./routes/auth-routes");
 const HomeRoutes = require("./routes/home-routes");
 const AdminRoutes = require("./routes/admin-routes");
-
+const ImageRoutes = require("./routes/image-routes");
 
 
 
@@ -20,6 +20,7 @@ app.use(express.json());
 app.use("/api/auth", AuthRoutes);
 app.use("/api/home", HomeRoutes);
 app.use("/api/admin", AdminRoutes);
+app.use("/api/image", ImageRoutes);
 
 
 app.listen(port, () => {
