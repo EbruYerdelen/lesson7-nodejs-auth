@@ -8,6 +8,7 @@ const  uploadMiddleware  = require("../middleware/upload-middleware");
 
 //first define the route that will handle the image upload.Only authenticated and admin users will be able to upload images.
 router.post("/upload", authMiddleware, adminMiddleware, uploadMiddleware.single("image"), imageUpload);
+//the "image" specified in upload.single('image') in the route must match the name attribute of the file input in your HTML form. This ensures that the file uploaded by the client is correctly processed by the multer middleware.
 //here we're using multiple middlewares to protect the route,first authMiddleware will check if the user is authenticated or not,then adminMiddleware will check if the user is an admin user or not,then uploadMiddleware will handle the file upload and then imageUpload controller will handle the image upload.
 
 //then we will get the list of all images that are uploaded.Here user roles will not matter,anyone authenticated can access this route.
